@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Snake Empire: Gold Edition</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <style>
+        body { margin: 0; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; color: gold; font-family: sans-serif; overflow: hidden; }
+        canvas { border: 2px solid gold; box-shadow: 0 0 20px rgba(255, 215, 0, 0.5); background: #111; }
+        .score { font-size: 24px; margin-bottom: 10px; text-shadow: 0 0 10px gold; }
+    </style>
+</head>
+<body>
+    <div class="score">Assets: <span id="scoreVal">0</span> BYN</div>
+    <canvas id="gameCanvas" width="350" height="350"></canvas>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const scoreElement = document.getElementById("scoreVal");
+
+        let score = 0;
+        let snake = [{x: 160, y: 160}, {x: 140, y: 160}, {x: 120, y: 160}];
+        let dx = 20;
+        let dy = 0;
+        let foodX;
+        let foodY;
+
+        function main() {
+            if (didGameEnd()) return alert("Game Over! Score: " + score);
+            setTimeout(function onTick() {
+                clearCanvas();
+                drawFood();
+                advanceSnake();
+                drawSnake();
+                main();
+            }, 150);
+        }
+
+        function clearCanvas() {
+            ctx.fillStyle = "#111";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function drawSnake() {
+            snake.forEach((part, index) => {
+                // Голова золотая, хвост чуть тусклее
+                ctx.fillStyle = index === 0 ? "#FFD700" : "#B8860B";
+                ctx.strokeStyle = "#000";
+                ctx.fillRect(part.x, part.y, 20, 20);
+                ctx.strokeRect(part.x, part.y, 20, 20);
+            });
+        }
+
+        function advanceSnake() {
+            const head = {x: snake[0].x + dx, y: snake[0].y + dy};
+            snake.unshift(head);
+            if (snake[0].x === foodX && snake[0].y === foodY) {
+                score += 10;
+                scoreElement.innerHTML = score;
+                createFood();
+            } else {
+                snake.pop();
+            }
+        }
+
+        function didGameEnd() {
+            for (let i = 4; i < snake.length; i++) {
+                if (snake[i].x === snake[0].x && snake[i].y === snake[0].y) return true;
+            }
+            const hitLeftWall = snake[0].x < 0;
+            const hitRightWall = snake[0].x > canvas.width - 20;
+            const hitTopWall = snake[0].y < 0;
+            const hitBottomWall = snake[0].y > canvas.height - 20;
+            return hitLeftWall || hitRightWall || hitTopWall || hitBottomWall;
+        }
+
+        function createFood() {
+            foodX = Math.floor(Math.random() * (canvas.width/20)) * 20;
+            foodY = Math.floor(Math.random() * (canvas.height/20)) * 20;
+        }
+
+        // Управление для телефона (свайпы или просто клики по сторонам)
+        window.addEventListener("keydown", event => {
+            const LEFT_KEY = 37; const RIGHT_KEY = 39; const UP_KEY = 38; const DOWN_KEY = 40;
+            const keyPressed = event.keyCode;
+            if (keyPressed === LEFT_KEY && dx === 0) { dx = -20; dy = 0; }
+            if (keyPressed === UP_KEY && dy === 0) { dx = 0; dy = -20; }
+            if (keyPressed === RIGHT_KEY && dx === 0) { dx = 20; dy = 0; }
+            if (keyPressed === DOWN_KEY && dy === 0) { dx = 0; dy = 20; }
+        });
+
+        createFood();
+        main();
+    </script>
+</body>
+</html>
