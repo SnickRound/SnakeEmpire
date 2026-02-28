@@ -1,6 +1,25 @@
 <!DOCTYPE html>
 <html>
 <head>
+    // В самом начале скрипта в index.html добавь:
+const urlParams = new URLSearchParams(window.location.search);
+const userId = urlParams.get('user_id');
+
+function main() {
+    if (didGameEnd()) {
+        // ОТПРАВЛЯЕМ ДАННЫЕ НА ТВОЙ КОМПЬЮТЕР
+        // Замени IP на свой или используй ngrok (объясню позже)
+        fetch('http://ТВОЙ_IP:5000/save_score', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ user_id: userId, score: score })
+        }).finally(() => {
+            tg.close();
+        });
+        return;
+    }
+    // ... остальной код main ...
+}
     <title>Snake Empire</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -135,4 +154,5 @@
     </script>
 </body>
 </html>
+
 
