@@ -82,14 +82,14 @@
         }
 
         function drawSnake() {
-            snake.forEach((part, i) => {
-                ctx.fillStyle = i === 0 ? "#FFD700" : "#DAA520";
-                // Скругленные углы для змейки
-                ctx.beginPath();
-                ctx.roundRect(part.x + 1, part.y + 1, 18, 18, 5);
-                ctx.fill();
-            });
-        }
+    snake.forEach((part, i) => {
+        // Обычная зеленая змея
+        ctx.fillStyle = i === 0 ? "#2ecc71" : "#27ae60"; 
+        ctx.beginPath();
+        ctx.roundRect(part.x + 1, part.y + 1, 18, 18, 5);
+        ctx.fill();
+    });
+}
 
         function advanceSnake() {
             const head = {x: snake[0].x + dx, y: snake[0].y + dy};
@@ -135,3 +135,4 @@
     </script>
 </body>
 </html>
+
