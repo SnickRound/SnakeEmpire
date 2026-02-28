@@ -1,61 +1,16 @@
 <!DOCTYPE html>
 <html>
 <head>
-    // В самом начале скрипта в index.html добавь:
-const urlParams = new URLSearchParams(window.location.search);
-const userId = urlParams.get('user_id');
-
-function main() {
-    if (didGameEnd()) {
-        // ОТПРАВЛЯЕМ ДАННЫЕ НА ТВОЙ КОМПЬЮТЕР
-        // Замени IP на свой или используй ngrok (объясню позже)
-        fetch('http://ТВОЙ_IP:5000/save_score', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ user_id: userId, score: score })
-        }).finally(() => {
-            tg.close();
-        });
-        return;
-    }
-    // ... остальной код main ...
-}
     <title>Snake Empire</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { 
-            margin: 0; 
-            background: #000; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; 
-            min-height: 100vh; 
-            color: #FFD700; 
-            font-family: 'Segoe UI', sans-serif; 
-            touch-action: none;
-        }
-        /* Фон с сеткой */
-        canvas { 
-            border: 2px solid #FFD700; 
-            background-color: #050505;
-            background-image: 
-                linear-gradient(rgba(255, 215, 0, 0.05) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 215, 0, 0.05) 1px, transparent 1px);
-            background-size: 20px 20px;
-            border-radius: 8px; 
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
-        }
+        body { margin: 0; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; color: #FFD700; font-family: sans-serif; touch-action: none; }
+        canvas { border: 2px solid #FFD700; background-color: #050505; background-image: linear-gradient(rgba(255, 215, 0, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 215, 0, 0.05) 1px, transparent 1px); background-size: 20px 20px; border-radius: 8px; box-shadow: 0 0 20px rgba(255, 215, 0, 0.2); max-width: 90vw; }
         .score { font-size: 26px; margin-bottom: 10px; font-weight: bold; text-shadow: 0 0 10px gold; }
-        
         .controls { display: grid; grid-template-areas: ". up ." "left down right"; gap: 15px; margin-top: 20px; }
-        .btn { 
-            width: 65px; height: 65px; background: rgba(255, 215, 0, 0.1); border: 1px solid #FFD700; 
-            border-radius: 50%; display: flex; align-items: center; justify-content: center; 
-            color: gold; font-size: 25px; cursor: pointer; user-select: none;
-        }
+        .btn { width: 65px; height: 65px; background: rgba(255, 215, 0, 0.1); border: 1px solid #FFD700; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: gold; font-size: 25px; cursor: pointer; user-select: none; }
         .btn:active { background: #FFD700; color: #000; }
         .up { grid-area: up; } .left { grid-area: left; } .down { grid-area: down; } .right { grid-area: right; }
     </style>
@@ -63,7 +18,6 @@ function main() {
 <body>
     <div class="score"><span id="scoreVal">0</span> MONEY</div>
     <canvas id="gameCanvas" width="300" height="300"></canvas>
-
     <div class="controls">
         <div class="btn up" onclick="changeDir('UP')">▲</div>
         <div class="btn left" onclick="changeDir('LEFT')">◀</div>
@@ -75,50 +29,55 @@ function main() {
         const tg = window.Telegram.WebApp;
         tg.expand();
 
+        // Читаем из ссылки, какой скин нам использовать (по умолчанию Classic Snake)
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentSkin = urlParams.get('skin') || 'Classic Snake';
+
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
         const scoreElement = document.getElementById("scoreVal");
 
         let score = 0;
-        let speed = 160; // Начальная скорость
         let snake = [{x: 100, y: 100}, {x: 80, y: 100}];
         let dx = 20; let dy = 0;
         let foodX; let foodY;
 
         function main() {
             if (didGameEnd()) {
-                if (tg.sendData) tg.sendData(score.toString());
+                // ВАЖНО: Отправляем очки боту перед закрытием
+                if (score > 0) {
+                    tg.sendData(score.toString());
+                }
                 setTimeout(() => { tg.close(); }, 500);
                 return;
             }
             setTimeout(() => {
                 clearCanvas(); drawFood(); advanceSnake(); drawSnake(); main();
-            }, speed);
+            }, 160);
         }
 
-        function clearCanvas() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-        }
+        function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
 
         function drawSnake() {
-    snake.forEach((part, i) => {
-        // Обычная зеленая змея
-        ctx.fillStyle = i === 0 ? "#2ecc71" : "#27ae60"; 
-        ctx.beginPath();
-        ctx.roundRect(part.x + 1, part.y + 1, 18, 18, 5);
-        ctx.fill();
-    });
-}
+            snake.forEach((part, i) => {
+                if (currentSkin === 'Gold Genesis') {
+                    ctx.fillStyle = i === 0 ? "#FFD700" : "#DAA520";
+                    ctx.shadowBlur = 10; ctx.shadowColor = "#FFD700";
+                } else {
+                    ctx.fillStyle = i === 0 ? "#2ecc71" : "#27ae60"; // Зеленая классика
+                    ctx.shadowBlur = 0;
+                }
+                ctx.beginPath();
+                ctx.roundRect(part.x + 1, part.y + 1, 18, 18, 5);
+                ctx.fill();
+            });
+        }
 
         function advanceSnake() {
             const head = {x: snake[0].x + dx, y: snake[0].y + dy};
             snake.unshift(head);
             if (snake[0].x === foodX && snake[0].y === foodY) {
-                score += 10;
-                scoreElement.innerHTML = score;
-                // Ускорение каждые 50 очков
-                if (speed > 80) speed -= 5; 
-                createFood();
+                score += 10; scoreElement.innerHTML = score; createFood();
             } else { snake.pop(); }
         }
 
@@ -134,11 +93,8 @@ function main() {
 
         function drawFood() {
             ctx.fillStyle = "#00FF00";
-            ctx.shadowBlur = 15;
-            ctx.shadowColor = "#00FF00";
-            ctx.beginPath(); 
-            ctx.arc(foodX+10, foodY+10, 8, 0, 7); 
-            ctx.fill();
+            ctx.shadowBlur = 15; ctx.shadowColor = "#00FF00";
+            ctx.beginPath(); ctx.arc(foodX+10, foodY+10, 8, 0, 7); ctx.fill();
             ctx.shadowBlur = 0;
         }
 
@@ -154,5 +110,3 @@ function main() {
     </script>
 </body>
 </html>
-
-
