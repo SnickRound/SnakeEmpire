@@ -7,66 +7,26 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { margin: 0; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; color: #FFD700; font-family: sans-serif; touch-action: none; overflow: hidden; }
-        
         canvas { border: 2px solid #FFD700; background-color: #050505; background-image: linear-gradient(rgba(255, 215, 0, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 215, 0, 0.05) 1px, transparent 1px); background-size: 20px 20px; border-radius: 8px; box-shadow: 0 0 20px rgba(255, 215, 0, 0.2); max-width: 90vw; }
-        
         .score { font-size: 26px; margin-bottom: 10px; font-weight: bold; text-shadow: 0 0 10px gold; }
-        
         .controls { display: grid; grid-template-areas: ". up ." "left down right"; gap: 15px; margin-top: 20px; }
-        
         .btn { width: 65px; height: 65px; background: rgba(255, 215, 0, 0.1); border: 1px solid #FFD700; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: gold; font-size: 25px; cursor: pointer; user-select: none; }
         .btn:active { background: #FFD700; color: #000; }
         .up { grid-area: up; } .left { grid-area: left; } .down { grid-area: down; } .right { grid-area: right; }
-
-        /* Стили для экрана "Конец игры" */
-        #gameOverScreen {
-            display: none;
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.95);
-            border: 3px solid #FFD700;
-            padding: 30px;
-            text-align: center;
-            border-radius: 20px;
-            z-index: 100;
-            box-shadow: 0 0 50px rgba(255, 215, 0, 0.4);
-            min-width: 250px;
-        }
-
-        #gameOverScreen h2 { margin-top: 0; color: #FFD700; text-shadow: 0 0 10px gold; }
-
-        .menu-btn {
-            background: linear-gradient(to bottom, #FFD700, #B8860B);
-            color: black;
-            border: none;
-            padding: 12px 25px;
-            margin: 10px;
-            border-radius: 10px;
-            font-weight: bold;
-            font-size: 16px;
-            cursor: pointer;
-            width: 80%;
-            box-shadow: 0 4px 0 #8B4513;
-            transition: 0.1s;
-        }
-
-        .menu-btn:active {
-            transform: translateY(3px);
-            box-shadow: 0 1px 0 #8B4513;
-        }
+        
+        #gameOverScreen { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0, 0, 0, 0.95); border: 3px solid #FFD700; padding: 30px; text-align: center; border-radius: 20px; z-index: 100; box-shadow: 0 0 50px rgba(255, 215, 0, 0.4); min-width: 250px; }
+        .menu-btn { background: linear-gradient(to bottom, #FFD700, #B8860B); color: black; border: none; padding: 12px 25px; margin: 10px; border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; width: 80%; }
     </style>
 </head>
 <body>
     <div class="score"><span id="scoreVal">0</span> MONEY</div>
-    
     <canvas id="gameCanvas" width="300" height="300"></canvas>
 
     <div id="gameOverScreen">
         <h2>ИМПЕРИЯ ПАЛА</h2>
-        <p style="font-size: 18px;">Добыча: <span id="finalScore" style="color: gold; font-weight: bold;">0</span></p>
+        <p>Добыча: <span id="finalScore" style="color: gold;">0</span></p>
         <button class="menu-btn" onclick="resetGame()">ИГРАТЬ СНОВА</button>
-        <button class="menu-btn" style="background: #444; color: white; box-shadow: 0 4px 0 #222;" onclick="tg.close()">ВЫЙТИ</button>
+        <button class="menu-btn" style="background: #444; color: white;" onclick="exitGame()">ВЫЙТИ</button>
     </div>
 
     <div class="controls">
@@ -89,6 +49,7 @@
         const scoreElement = document.getElementById("scoreVal");
 
         let score = 0;
+        let totalSessionScore = 0; // Накопленные очки за все игры в этой сессии
         let snake = [{x: 100, y: 100}, {x: 80, y: 100}];
         let dx = 20; let dy = 0;
         let foodX; let foodY;
@@ -96,16 +57,12 @@
 
         function main() {
             if (!gameActive) return;
-
             if (didGameEnd()) {
                 gameActive = false;
-                if (score > 0) {
-                    tg.sendData(score.toString());
-                }
+                totalSessionScore += score; // Добавляем очки текущей игры в общую копилку
                 showGameOver();
                 return;
             }
-
             setTimeout(() => {
                 clearCanvas(); drawFood(); advanceSnake(); drawSnake(); main();
             }, 160);
@@ -117,7 +74,6 @@
         }
 
         function resetGame() {
-            // Сброс всех переменных для новой игры
             score = 0;
             scoreElement.innerHTML = score;
             snake = [{x: 100, y: 100}, {x: 80, y: 100}];
@@ -128,21 +84,20 @@
             main();
         }
 
+        function exitGame() {
+            // Отправляем суммарные очки только при выходе
+            if (totalSessionScore > 0) {
+                tg.sendData(totalSessionScore.toString());
+            }
+            tg.close();
+        }
+
         function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
 
         function drawSnake() {
             snake.forEach((part, i) => {
-                if (currentSkin === 'Gold Genesis') {
-                    ctx.fillStyle = i === 0 ? "#FFD700" : "#DAA520";
-                    ctx.shadowBlur = 10; ctx.shadowColor = "#FFD700";
-                } else {
-                    ctx.fillStyle = i === 0 ? "#2ecc71" : "#27ae60"; 
-                    ctx.shadowBlur = 0;
-                }
-                ctx.beginPath();
-                ctx.roundRect(part.x + 1, part.y + 1, 18, 18, 5);
-                ctx.fill();
-                ctx.shadowBlur = 0;
+                ctx.fillStyle = (currentSkin === 'Gold Genesis') ? (i === 0 ? "#FFD700" : "#DAA520") : (i === 0 ? "#2ecc71" : "#27ae60");
+                ctx.beginPath(); ctx.roundRect(part.x + 1, part.y + 1, 18, 18, 5); ctx.fill();
             });
         }
 
@@ -165,10 +120,7 @@
         }
 
         function drawFood() {
-            ctx.fillStyle = "#00FF00";
-            ctx.shadowBlur = 15; ctx.shadowColor = "#00FF00";
-            ctx.beginPath(); ctx.arc(foodX+10, foodY+10, 8, 0, 7); ctx.fill();
-            ctx.shadowBlur = 0;
+            ctx.fillStyle = "#00FF00"; ctx.beginPath(); ctx.arc(foodX+10, foodY+10, 8, 0, 7); ctx.fill();
         }
 
         function changeDir(dir) {
@@ -179,8 +131,7 @@
             if (dir === 'DOWN' && dy === 0) { dx = 0; dy = 20; }
         }
 
-        createFood();
-        main();
+        createFood(); main();
     </script>
 </body>
 </html>
