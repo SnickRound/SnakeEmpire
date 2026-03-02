@@ -13,18 +13,44 @@
         .btn { width: 65px; height: 65px; background: rgba(255, 215, 0, 0.1); border: 1px solid #FFD700; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: gold; font-size: 25px; cursor: pointer; user-select: none; }
         .btn:active { background: #FFD700; color: #000; }
         .up { grid-area: up; } .left { grid-area: left; } .down { grid-area: down; } .right { grid-area: right; }
-        
-        #gameOverScreen { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0, 0, 0, 0.95); border: 3px solid #FFD700; padding: 30px; text-align: center; border-radius: 20px; z-index: 100; box-shadow: 0 0 50px rgba(255, 215, 0, 0.4); min-width: 250px; }
-        .menu-btn { background: linear-gradient(to bottom, #FFD700, #B8860B); color: black; border: none; padding: 12px 25px; margin: 10px; border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; width: 80%; }
+
+        /* ЭТО МЫ ДОБАВИЛИ ДЛЯ МЕНЮ */
+        #gameOverScreen {
+            display: none;
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            border: 3px solid #FFD700;
+            padding: 30px;
+            text-align: center;
+            border-radius: 20px;
+            z-index: 100;
+            box-shadow: 0 0 50px rgba(255, 215, 0, 0.4);
+            min-width: 250px;
+        }
+        .menu-btn {
+            background: linear-gradient(to bottom, #FFD700, #B8860B);
+            color: black;
+            border: none;
+            padding: 12px 25px;
+            margin: 10px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            width: 80%;
+        }
     </style>
 </head>
 <body>
     <div class="score"><span id="scoreVal">0</span> MONEY</div>
+    
     <canvas id="gameCanvas" width="300" height="300"></canvas>
 
     <div id="gameOverScreen">
-        <h2>ИМПЕРИЯ ПАЛА</h2>
-        <p>Добыча: <span id="finalScore" style="color: gold;">0</span></p>
+        <h2 style="text-shadow: 0 0 10px gold;">ИМПЕРИЯ ПАЛА</h2>
+        <p style="font-size: 18px;">Добыча: <span id="finalScore" style="color: gold; font-weight: bold;">0</span></p>
         <button class="menu-btn" onclick="resetGame()">ИГРАТЬ СНОВА</button>
         <button class="menu-btn" style="background: #444; color: white;" onclick="exitGame()">ВЫЙТИ</button>
     </div>
@@ -49,7 +75,7 @@
         const scoreElement = document.getElementById("scoreVal");
 
         let score = 0;
-        let totalSessionScore = 0; // Накопленные очки за все игры в этой сессии
+        let totalSessionScore = 0; // Для суммирования очков за несколько игр
         let snake = [{x: 100, y: 100}, {x: 80, y: 100}];
         let dx = 20; let dy = 0;
         let foodX; let foodY;
@@ -57,9 +83,10 @@
 
         function main() {
             if (!gameActive) return;
+
             if (didGameEnd()) {
                 gameActive = false;
-                totalSessionScore += score; // Добавляем очки текущей игры в общую копилку
+                totalSessionScore += score; // Копим очки перед выходом
                 showGameOver();
                 return;
             }
@@ -85,7 +112,6 @@
         }
 
         function exitGame() {
-            // Отправляем суммарные очки только при выходе
             if (totalSessionScore > 0) {
                 tg.sendData(totalSessionScore.toString());
             }
@@ -96,8 +122,17 @@
 
         function drawSnake() {
             snake.forEach((part, i) => {
-                ctx.fillStyle = (currentSkin === 'Gold Genesis') ? (i === 0 ? "#FFD700" : "#DAA520") : (i === 0 ? "#2ecc71" : "#27ae60");
-                ctx.beginPath(); ctx.roundRect(part.x + 1, part.y + 1, 18, 18, 5); ctx.fill();
+                if (currentSkin === 'Gold Genesis') {
+                    ctx.fillStyle = i === 0 ? "#FFD700" : "#DAA520";
+                    ctx.shadowBlur = 10; ctx.shadowColor = "#FFD700";
+                } else {
+                    ctx.fillStyle = i === 0 ? "#2ecc71" : "#27ae60"; 
+                    ctx.shadowBlur = 0;
+                }
+                ctx.beginPath();
+                ctx.roundRect(part.x + 1, part.y + 1, 18, 18, 5);
+                ctx.fill();
+                ctx.shadowBlur = 0;
             });
         }
 
@@ -120,7 +155,10 @@
         }
 
         function drawFood() {
-            ctx.fillStyle = "#00FF00"; ctx.beginPath(); ctx.arc(foodX+10, foodY+10, 8, 0, 7); ctx.fill();
+            ctx.fillStyle = "#00FF00";
+            ctx.shadowBlur = 15; ctx.shadowColor = "#00FF00";
+            ctx.beginPath(); ctx.arc(foodX+10, foodY+10, 8, 0, 7); ctx.fill();
+            ctx.shadowBlur = 0;
         }
 
         function changeDir(dir) {
@@ -131,7 +169,8 @@
             if (dir === 'DOWN' && dy === 0) { dx = 0; dy = 20; }
         }
 
-        createFood(); main();
+        createFood();
+        main();
     </script>
 </body>
 </html>
